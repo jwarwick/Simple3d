@@ -1,37 +1,37 @@
-import peasy.*;
+import peasy.*;  // Processing camera library from http://mrfeinberg.com/peasycam/
 
-PeasyCam cam;
-
-static int SCREEN_WIDTH = 500;
-static int SCREEN_HEIGHT = 500;
-
-
-static int FIXTURE_SIZE = 40;
-
-static int NUM_FIXTURES = 200;
-Fixture[] fixtureArray;
-
-
-static int SOURCE_SIZE = 10;
-
-static int NUM_SOURCES = 7;
-Source[] sourceArray;
-
-void setup()
-{
-  size(SCREEN_WIDTH, SCREEN_HEIGHT, P3D);
-
+// simple camera controls
   // PeasyCam instructions:  
   // left click and drag to rotate camera
   // right click and drag to zoom
   // double click to reset to initial position
   // splat + left click and drag to pan (or 3rd mouse button and drag)
+PeasyCam cam;
 
-  cam = new PeasyCam(this, width/2, height/2, width, 500);
-  cam.setMinimumDistance(50);
-  cam.setMaximumDistance(2000);
+// display window size
+static int SCREEN_WIDTH = 500;
+static int SCREEN_HEIGHT = 500;
 
-  fixtureArray = new Fixture[NUM_FIXTURES];  
+// fixture definitions
+static int NUM_FIXTURES = 200;
+Fixture[] fixtureArray = new Fixture[NUM_FIXTURES];
+static int FIXTURE_SIZE = 40;
+
+// source definition
+static int NUM_SOURCES = 7;
+Source[] sourceArray = new Source[NUM_SOURCES];
+static int SOURCE_SIZE = 10;
+
+
+void setup()
+{
+  // size the display window
+  size(SCREEN_WIDTH, SCREEN_HEIGHT, P3D);
+
+  // PeasyCam(parent, lookAtX, lookAtY, lookAtXZ, distance) 
+  cam = new PeasyCam(this, width/2, height/2, width/2, 1.5*width);
+
+  // create the fixtures
   for (int index=0; index<fixtureArray.length; ++index)
   {
     Fixture f = new Fixture(new Position()); 
@@ -39,7 +39,7 @@ void setup()
     //println("Fixture at " + f.position.toString());
   }
   
-  sourceArray = new Source[NUM_SOURCES];  
+  // create the sources  
   for (int index=0; index<sourceArray.length; ++index)
   {
     //Source s = new Source(new Position());
@@ -53,23 +53,29 @@ void setup()
 
 void draw()
 {
-  computeUpdatedColors();
+  // update the color of each fixture
+  for (int i=0; i<NUM_FIXTURES; ++i)
+  {
+    fixtureArray[i].updateColors(sourceArray);
+  }
   
   background(0);
   noStroke();
   ambientLight(255, 255, 255);
   
+  // draw the sources
   for (int i=0; i<sourceArray.length; ++i)
   {
     sourceArray[i].draw();
   }
   
+  // draw the fixtures
   for (int i=0; i<fixtureArray.length; ++i)
   {
     fixtureArray[i].draw();
   }
  
-   // update all the positions first, since the color depends on the position
+  // update all the positions first, since the color depends on the position
   for (int i=0; i<sourceArray.length; ++i)
   {
     sourceArray[i].updatePosition();
@@ -81,15 +87,8 @@ void draw()
   }
 }
 
-void computeUpdatedColors()
-{
-  for (int i=0; i<NUM_FIXTURES; ++i)
-  {
-    fixtureArray[i].updateColors(sourceArray);
-  }
-}
 
-
+// class to hold location of objects and perform math on them
 public class Position
 {
   public float x, y, z;
@@ -121,6 +120,7 @@ public class Position
     z = random(z-maxRange, z+maxRange);
   }
   
+  // distance to another position instance
   public float distanceTo(Position targetPos)
   {
     // manhattan distance, good enough
@@ -158,12 +158,15 @@ public class Fixture
     popMatrix();
   }  
   
+  // the color of a fixture is determined by summing all input from the different sources
+  // the color of a source is scaled based on it's distance
   public void updateColors(Source[] sources)
   {
     float r, g, b;
     r = g = b = 0;
     for (int i=0; i<sources.length; ++i)
     {
+      // what color does this source impart on our position
       color c = sources[i].colorAtPoint(position);
       r += red(c);
       g += green(c);
@@ -171,6 +174,7 @@ public class Fixture
  
     }
     
+    // keep everything in range
     if (r > 255)
     {
       r = 255;
@@ -236,6 +240,11 @@ public class Source
     float percent = distance/range;
     float fallOff = 1.0 - percent;
     fallOff *= fallOff;
+    
+    if (fallOff > 1.0)
+    {
+      fallOff = 1.0;
+    }
  
     int r = (int)(red(c) * fallOff);
     int g = (int)(green(c) * fallOff);
