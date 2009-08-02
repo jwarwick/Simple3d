@@ -2,20 +2,24 @@ import peasy.*;
 
 PeasyCam cam;
 
+static int SCREEN_WIDTH = 500;
+static int SCREEN_HEIGHT = 500;
+
+
 static int FIXTURE_SIZE = 40;
 
-static int NUM_FIXTURES = 70;
+static int NUM_FIXTURES = 200;
 Fixture[] fixtureArray;
 
 
 static int SOURCE_SIZE = 10;
 
-static int NUM_SOURCES = 10;
+static int NUM_SOURCES = 5;
 Source[] sourceArray;
 
 void setup()
 {
-  size(500, 500, P3D);
+  size(SCREEN_WIDTH, SCREEN_HEIGHT, P3D);
 
   // PeasyCam instructions:  
   // left click and drag to rotate camera
@@ -23,7 +27,7 @@ void setup()
   // double click to reset to initial position
   // splat + left click and drag to pan (or 3rd mouse button and drag)
 
-  cam = new PeasyCam(this, width/2, height/2, 500, 500);
+  cam = new PeasyCam(this, width/2, height/2, width, 500);
   cam.setMinimumDistance(50);
   cam.setMaximumDistance(2000);
 
@@ -32,7 +36,7 @@ void setup()
   {
     Fixture f = new Fixture(new Position()); 
     fixtureArray[index] = f;
-    println("Fixture at " + f.position.toString());
+    //println("Fixture at " + f.position.toString());
   }
   
   sourceArray = new Source[NUM_SOURCES];  
@@ -40,7 +44,7 @@ void setup()
   {
     Source s = new Source(new Position()); 
     sourceArray[index] = s;
-    println("Source at " + s.position.toString());
+    //println("Source at " + s.position.toString());
   }
   
 }
@@ -56,13 +60,22 @@ void draw()
   for (int i=0; i<sourceArray.length; ++i)
   {
     sourceArray[i].draw();
-    sourceArray[i].randomMove();
-    sourceArray[i].randomColorShift();
   }
   
   for (int i=0; i<fixtureArray.length; ++i)
   {
     fixtureArray[i].draw();
+  }
+ 
+   // update all the positions first, since the color depends on the position
+  for (int i=0; i<sourceArray.length; ++i)
+  {
+    sourceArray[i].updatePosition();
+  }
+
+  for (int i=0; i<sourceArray.length; ++i)
+  {
+    sourceArray[i].updateColor();
   }
 }
 
@@ -116,6 +129,8 @@ class Position
   }
 }
 
+
+// object that displays a color
 class Fixture
 {
   Position position;
@@ -171,6 +186,8 @@ class Fixture
   }
 }
 
+
+// object that generates a color
 class Source
 {
   Position position;
@@ -197,9 +214,14 @@ class Source
     popMatrix();
   }
   
-  void randomMove()
+  void updatePosition()
   {
     position.randomMove(2);
+  }
+  
+  void updateColor()
+  {
+    randomColorShift();
   }
   
   void randomColorShift()
@@ -209,6 +231,7 @@ class Source
     int newB = (int)blue(c) + (int)random(-5, 5);
     c = color(newR, newG, newB);
   }
+  
   
   color colorAtPoint(Position targetPos)
   {
@@ -226,9 +249,7 @@ class Source
     int r = (int)(red(c) * fallOff);
     int g = (int)(green(c) * fallOff);
     int b = (int)(blue(c) * fallOff);
-    color newColor = color(r, g, b);
-    
-    return newColor;
+    return color(r, g, b);
   }
 }
 
