@@ -14,7 +14,7 @@ Fixture[] fixtureArray;
 
 static int SOURCE_SIZE = 10;
 
-static int NUM_SOURCES = 5;
+static int NUM_SOURCES = 7;
 Source[] sourceArray;
 
 void setup()
@@ -42,7 +42,9 @@ void setup()
   sourceArray = new Source[NUM_SOURCES];  
   for (int index=0; index<sourceArray.length; ++index)
   {
-    Source s = new Source(new Position()); 
+    //Source s = new Source(new Position());
+    //Source s = new RandomSource(new Position());
+    Source s = new SineSource(new Position());
     sourceArray[index] = s;
     //println("Source at " + s.position.toString());
   }
@@ -88,11 +90,11 @@ void computeUpdatedColors()
 }
 
 
-class Position
+public class Position
 {
-  float x, y, z;
+  public float x, y, z;
 
-  Position(float xPos, float yPos, float zPos)  
+  public Position(float xPos, float yPos, float zPos)  
   {
     x = xPos;
     y = yPos;
@@ -100,26 +102,26 @@ class Position
   }
 
   // generate a random position  
-  Position()
+  public Position()
   {
      x = random(0, width);
      y = random(0, height);
      z = random(0, height);
   }
   
-  String toString()
+  public String toString()
   {
     return "(" + x + "," + y + "," + z + ")";
   }
   
-  void randomMove(float maxRange)
+  public void randomMove(float maxRange)
   {
     x = random(x-maxRange, x+maxRange);
     y = random(y-maxRange, y+maxRange);
     z = random(z-maxRange, z+maxRange);
   }
   
-  float distanceTo(Position targetPos)
+  public float distanceTo(Position targetPos)
   {
     // manhattan distance, good enough
     float distance = abs(x - targetPos.x);
@@ -131,22 +133,22 @@ class Position
 
 
 // object that displays a color
-class Fixture
+public class Fixture
 {
-  Position position;
-  color fixtureColor;
+  public Position position;
+  public color fixtureColor;
   
-  Fixture(float xpos, float ypos, float zpos)
+  public Fixture(float xpos, float ypos, float zpos)
   {
     position = new Position(xpos, ypos, zpos);
   }
   
-  Fixture(Position p)
+  public Fixture(Position p)
   {
     position = p;
   }
   
-  void draw()
+  public void draw()
   {
     pushMatrix();
     noStroke();
@@ -156,7 +158,7 @@ class Fixture
     popMatrix();
   }  
   
-  void updateColors(Source[] sources)
+  public void updateColors(Source[] sources)
   {
     float r, g, b;
     r = g = b = 0;
@@ -188,23 +190,23 @@ class Fixture
 
 
 // object that generates a color
-class Source
+public class Source
 {
-  Position position;
-  float range = 600.0;
-  color c = color(random(0, 255), random(0, 255), random(0, 255));
+  public Position position;
+  public float range = 600.0;
+  public color c = color(random(0, 255), random(0, 255), random(0, 255));
   
-  Source(float xpos, float ypos, float zpos)
+  public Source(float xpos, float ypos, float zpos)
   {
     position = new Position(xpos, ypos, zpos);
   }
   
-  Source(Position p)
+  public Source(Position p)
   {
     position = p;
   }
   
-  void draw()
+  public void draw()
   {
     pushMatrix();
     noStroke();
@@ -214,26 +216,15 @@ class Source
     popMatrix();
   }
   
-  void updatePosition()
+  public void updatePosition()
   {
-    position.randomMove(2);
   }
   
-  void updateColor()
+  public void updateColor()
   {
-    randomColorShift();
   }
   
-  void randomColorShift()
-  {
-    int newR = (int)red(c) + (int)random(-5, 5);
-    int newG = (int)green(c) + (int)random(-5, 5);
-    int newB = (int)blue(c) + (int)random(-5, 5);
-    c = color(newR, newG, newB);
-  }
-  
-  
-  color colorAtPoint(Position targetPos)
+  public color colorAtPoint(Position targetPos)
   {
     float distance = position.distanceTo(targetPos);
 
@@ -253,3 +244,54 @@ class Source
   }
 }
 
+// a not very useful type of source, random small movements and color changes
+public class RandomSource extends Source
+{
+  public RandomSource(Position p)
+  {
+    super(p);
+  }
+  
+  public void updatePosition()
+  {
+    position.randomMove(5);
+  }
+  
+  public void updateColor()
+  {
+    int newR = (int)red(c) + (int)random(-5, 5);
+    int newG = (int)green(c) + (int)random(-5, 5);
+    int newB = (int)blue(c) + (int)random(-5, 5);
+    c = color(newR, newG, newB);
+  }
+}
+
+
+// another type of source, with better movement
+public class SineSource extends Source
+{
+  
+  public int interval = 100; // in frames
+  public float baseZ;
+  
+  public SineSource(Position p)
+  {
+    super(p);
+    baseZ = position.z;
+    
+    interval = (int)random(2, 500);
+  }
+  
+  public void updatePosition()
+  {
+    int frames = frameCount;
+    float rem = frames % interval;
+    float percent = rem/(float)(interval);
+    float rad = (float)((2.0 * Math.PI) * percent);
+    
+    double s = sin(rad);
+    float newZ = (float)(baseZ + (s * width/2));
+    
+    position.z = newZ;
+  }
+}
