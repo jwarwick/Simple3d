@@ -1,13 +1,15 @@
-
 import peasy.*;
 
 PeasyCam cam;
 
 static int FIXTURE_SIZE = 40;
+
 static int NUM_FIXTURES = 70;
 Fixture[] fixtureArray;
 
+
 static int SOURCE_SIZE = 10;
+
 static int NUM_SOURCES = 10;
 Source[] sourceArray;
 
@@ -26,46 +28,39 @@ void setup()
   cam.setMaximumDistance(2000);
 
   fixtureArray = new Fixture[NUM_FIXTURES];  
-  for (int index=0; index<NUM_FIXTURES; ++index)
+  for (int index=0; index<fixtureArray.length; ++index)
   {
-    int x = (int)random(0, width);
-    int y =  (int)random(0, height);  
-    int z = (int)random(0, width);
-    Fixture f = new Fixture(x, y, z); 
+    Fixture f = new Fixture(new Position()); 
     fixtureArray[index] = f;
-    println("Fixture at " + x + "," + y + "," + z);
+    println("Fixture at " + f.position.toString());
   }
   
   sourceArray = new Source[NUM_SOURCES];  
-  for (int index=0; index<NUM_SOURCES; ++index)
+  for (int index=0; index<sourceArray.length; ++index)
   {
-    int x = (int)random(0, width);
-    int y =  (int)random(0, height);  
-    int z = (int)random(0, width);
-    Source s = new Source(x, y, z); 
+    Source s = new Source(new Position()); 
     sourceArray[index] = s;
-    println("Source at " + x + "," + y + "," + z);
+    println("Source at " + s.position.toString());
   }
   
 }
 
 void draw()
 {
-  
   computeUpdatedColors();
   
   background(0);
   noStroke();
   ambientLight(255, 255, 255);
   
-  for (int i=0; i<NUM_SOURCES; ++i)
+  for (int i=0; i<sourceArray.length; ++i)
   {
     sourceArray[i].draw();
     sourceArray[i].randomMove();
     sourceArray[i].randomColorShift();
   }
   
-  for (int i=0; i<NUM_FIXTURES; ++i)
+  for (int i=0; i<fixtureArray.length; ++i)
   {
     fixtureArray[i].draw();
   }
@@ -80,24 +75,67 @@ void computeUpdatedColors()
 }
 
 
+class Position
+{
+  float x, y, z;
+
+  Position(float xPos, float yPos, float zPos)  
+  {
+    x = xPos;
+    y = yPos;
+    z = zPos;
+  }
+
+  // generate a random position  
+  Position()
+  {
+     x = random(0, width);
+     y = random(0, height);
+     z = random(0, height);
+  }
+  
+  String toString()
+  {
+    return "(" + x + "," + y + "," + z + ")";
+  }
+  
+  void randomMove(float maxRange)
+  {
+    x = random(x-maxRange, x+maxRange);
+    y = random(y-maxRange, y+maxRange);
+    z = random(z-maxRange, z+maxRange);
+  }
+  
+  float distanceTo(Position targetPos)
+  {
+    // manhattan distance, good enough
+    float distance = abs(x - targetPos.x);
+    distance += abs(y - targetPos.y);
+    distance += abs(z - targetPos.z);
+    return distance;
+  }
+}
+
 class Fixture
 {
-  int x, y, z;
+  Position position;
   color fixtureColor;
   
-  
-  Fixture(int xpos, int ypos, int zpos)
+  Fixture(float xpos, float ypos, float zpos)
   {
-    x = xpos;
-    y = ypos;
-    z = zpos;
+    position = new Position(xpos, ypos, zpos);
+  }
+  
+  Fixture(Position p)
+  {
+    position = p;
   }
   
   void draw()
   {
     pushMatrix();
     noStroke();
-    translate(x, y, z);
+    translate(position.x, position.y, position.z);
     fill(fixtureColor);
     box(FIXTURE_SIZE);
     popMatrix();
@@ -109,7 +147,7 @@ class Fixture
     r = g = b = 0;
     for (int i=0; i<sources.length; ++i)
     {
-      color c = sources[i].colorAtPoint(x, y, z);
+      color c = sources[i].colorAtPoint(position);
       r += red(c);
       g += green(c);
       b += blue(c);
@@ -129,31 +167,31 @@ class Fixture
       b = 255;
     }
     
-    //println("\tr:" + r + ", g:" + g +", b:" + b);
     fixtureColor = color(r, g, b);
   }
 }
 
 class Source
 {
-  float x, y, z;
-  float range;
-  color c;
+  Position position;
+  float range = 600.0;
+  color c = color(random(0, 255), random(0, 255), random(0, 255));
   
   Source(float xpos, float ypos, float zpos)
   {
-    x = xpos;
-    y = ypos;
-    z = zpos;
-    c = color(random(0, 255), random(0, 255), random(0, 255));
-    range = 600.0;
+    position = new Position(xpos, ypos, zpos);
+  }
+  
+  Source(Position p)
+  {
+    position = p;
   }
   
   void draw()
   {
     pushMatrix();
     noStroke();
-    translate(x, y, z);
+    translate(position.x, position.y, position.z);
     fill(c);
     sphere(SOURCE_SIZE);
     popMatrix();
@@ -161,9 +199,7 @@ class Source
   
   void randomMove()
   {
-    x = random(x-5, x+5);
-    y = random(y-5, y+5);
-    z = random(z-5, z+5);
+    position.randomMove(2);
   }
   
   void randomColorShift()
@@ -174,9 +210,9 @@ class Source
     c = color(newR, newG, newB);
   }
   
-  color colorAtPoint(int xpos, int ypos, int zpos)
+  color colorAtPoint(Position targetPos)
   {
-    float distance = distanceTo(xpos, ypos, zpos);
+    float distance = position.distanceTo(targetPos);
 
     if (distance > range)
     {
@@ -184,29 +220,15 @@ class Source
     }
     
     float percent = distance/range;
-    
-    // XXX - need a better falloff calculation  1/d^2 was what I thought would be correct 
-    //   probably need to scale the distances by width/height/depth to get a percentage instead 
     float fallOff = 1.0 - percent;
     fallOff *= fallOff;
-    //println("d:" + distance + " r: " + range + " p:" + percent);
  
     int r = (int)(red(c) * fallOff);
     int g = (int)(green(c) * fallOff);
     int b = (int)(blue(c) * fallOff);
     color newColor = color(r, g, b);
     
-    //println("r: " + red(newColor) + ", g:" + green(newColor) + ", b:" + blue(newColor));
     return newColor;
-  }
-  
-  float distanceTo(int xpos, int ypos, int zpos)
-  {
-    // manhattan distance, good enough
-    float distance = abs(x - xpos);
-    distance += abs(y-ypos);
-    distance += abs(z-zpos);
-    return distance;
   }
 }
 
