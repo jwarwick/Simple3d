@@ -196,18 +196,9 @@ public class Fixture
     }
     
     // keep everything in range
-    if (r > 255)
-    {
-      r = 255;
-    }
-    if (g > 255)
-    {
-      g = 255;
-    }
-    if (b > 255)
-    {
-      b = 255;
-    }
+    r = Math.min(r, 255);
+    g = Math.min(g, 255);
+    b = Math.min(b, 255);
     
     fixtureColor = color(r, g, b);
   }
@@ -245,7 +236,14 @@ public class Source
     noStroke();
     translate(position.x, position.y, position.z);
     fill(c);
-    sphere(SOURCE_SIZE);
+    if (keyPressed && (key == 'r' || key == 'R'))
+    {
+      sphere(range/2);
+    }
+    else
+    {
+      sphere(SOURCE_SIZE);
+    }
     popMatrix();
   }
   
