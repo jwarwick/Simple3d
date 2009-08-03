@@ -9,18 +9,18 @@ import peasy.*;  // Processing camera library from http://mrfeinberg.com/peasyca
 PeasyCam cam;
 
 // display window size
-static int SCREEN_WIDTH = 500;
-static int SCREEN_HEIGHT = 500;
+final int SCREEN_WIDTH = 500;
+final int SCREEN_HEIGHT = 500;
 
 // fixture definitions
-static int NUM_FIXTURES = 200;
+final int NUM_FIXTURES = 200;
 Fixture[] fixtureArray = new Fixture[NUM_FIXTURES];
-static int FIXTURE_SIZE = 40;
+final int FIXTURE_SIZE = 40;
 
 // source definition
-static int NUM_SOURCES = 7;
+final int NUM_SOURCES = 7;
 Source[] sourceArray = new Source[NUM_SOURCES];
-static int SOURCE_SIZE = 10;
+final int SOURCE_SIZE = 10;
 
 
 void setup()
@@ -34,7 +34,7 @@ void setup()
   // create the fixtures
   for (int index=0; index<fixtureArray.length; ++index)
   {
-    Fixture f = new Fixture(new Position()); 
+    Fixture f = new Fixture(); 
     fixtureArray[index] = f;
     //println("Fixture at " + f.position.toString());
   }
@@ -42,9 +42,9 @@ void setup()
   // create the sources  
   for (int index=0; index<sourceArray.length; ++index)
   {
-    //Source s = new Source(new Position());
-    //Source s = new RandomSource(new Position());
-    Source s = new SineSource(new Position());
+    //Source s = new Source();
+    //Source s = new RandomSource();
+    Source s = new SineSource();
     sourceArray[index] = s;
     //println("Source at " + s.position.toString());
   }
@@ -64,15 +64,21 @@ void draw()
   ambientLight(255, 255, 255);
   
   // draw the sources
-  for (int i=0; i<sourceArray.length; ++i)
+  if (shouldDrawSources())
   {
-    sourceArray[i].draw();
+    for (int i=0; i<sourceArray.length; ++i)
+    {
+      sourceArray[i].draw();
+    }
   }
   
   // draw the fixtures
-  for (int i=0; i<fixtureArray.length; ++i)
+  if (shouldDrawFixtures())
   {
-    fixtureArray[i].draw();
+    for (int i=0; i<fixtureArray.length; ++i)
+    {
+      fixtureArray[i].draw();
+    }
   }
  
   // update all the positions first, since the color depends on the position
@@ -87,25 +93,39 @@ void draw()
   }
 }
 
+boolean shouldDrawSources()
+{
+  return !(keyPressed && ((key == 's' || key == 'S')));
+}
+
+boolean shouldDrawFixtures()
+{
+  return !(keyPressed && ((key == 'f' || key == 'F')));
+}
 
 // class to hold location of objects and perform math on them
 public class Position
 {
+  // the current location
   public float x, y, z;
+  
+  // the start location, set on creation
+  final public float startX, startY, startZ;
 
   public Position(float xPos, float yPos, float zPos)  
   {
     x = xPos;
     y = yPos;
     z = zPos;
+    startX = x;
+    startY = y;
+    startZ = z;
   }
 
   // generate a random position  
   public Position()
   {
-     x = random(0, width);
-     y = random(0, height);
-     z = random(0, height);
+     this(random(0, width), random(0, height), random(0, height));
   }
   
   public String toString()
@@ -138,14 +158,14 @@ public class Fixture
   public Position position;
   public color fixtureColor;
   
-  public Fixture(float xpos, float ypos, float zpos)
-  {
-    position = new Position(xpos, ypos, zpos);
-  }
-  
   public Fixture(Position p)
   {
     position = p;
+  }
+  
+  public Fixture()
+  {
+    this(new Position());
   }
   
   public void draw()
@@ -200,14 +220,22 @@ public class Source
   public float range = 600.0;
   public color c = color(random(0, 255), random(0, 255), random(0, 255));
   
-  public Source(float xpos, float ypos, float zpos)
+  public Source(Position p, float rng, color clr)
   {
-    position = new Position(xpos, ypos, zpos);
+    position = p;
+    range = rng;
+    c = clr;
   }
   
   public Source(Position p)
   {
-    position = p;
+    this(p, random(100, 600), color(random(0, 255), random(0, 255), random(0, 255)));
+  }
+  
+  public Source()
+  {
+    this(new Position(), random(100, 600), 
+    color(random(0, 255), random(0, 255), random(0, 255)));
   }
   
   public void draw()
@@ -256,6 +284,11 @@ public class Source
 // a not very useful type of source, random small movements and color changes
 public class RandomSource extends Source
 {
+  public RandomSource()
+  {
+    super();
+  }
+  
   public RandomSource(Position p)
   {
     super(p);
@@ -279,28 +312,40 @@ public class RandomSource extends Source
 // another type of source, with better movement
 public class SineSource extends Source
 {
+  public int intervalX, intervalY, intervalZ; // in frames
   
-  public int interval = 100; // in frames
-  public float baseZ;
+  public SineSource()
+  {
+    this(new Position());
+  }
   
   public SineSource(Position p)
   {
     super(p);
-    baseZ = position.z;
-    
-    interval = (int)random(2, 500);
+    int minRandom = 5;
+    int maxRandom = 500;
+    intervalX = (int)random(minRandom, maxRandom);
+    intervalY = (int)random(minRandom, maxRandom);
+    intervalZ = (int)random(minRandom, maxRandom);
   }
   
   public void updatePosition()
   {
-    int frames = frameCount;
-    float rem = frames % interval;
-    float percent = rem/(float)(interval);
-    float rad = (float)((2.0 * Math.PI) * percent);
+    position.x = computeNewValue(intervalX, position.startX, width/2);
+    position.y = computeNewValue(intervalY, position.startY, height/2);
+    position.z = computeNewValue(intervalZ, position.startZ, width/2);
+  }
+  
+  protected float computeNewValue(int interval, float startValue, float maxValue)
+  {
+    final int frames = frameCount;
     
-    double s = sin(rad);
-    float newZ = (float)(baseZ + (s * width/2));
+    final float rem = frames % interval;
+    final float percent = rem/(float)(interval);
+    final float rad = (float)((2.0 * Math.PI) * percent);
     
-    position.z = newZ;
+    final double s = sin(rad);
+    final float newValue = (float)(startValue + (s * maxValue/2));
+    return newValue;
   }
 }
