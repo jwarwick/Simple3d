@@ -44,7 +44,8 @@ void setup()
   {
     //Source s = new Source();
     //Source s = new RandomSource();
-    Source s = new SineSource();
+    //Source s = new SineSource();
+    Source s = new PulseSource();
     sourceArray[index] = s;
     //println("Source at " + s.position.toString());
   }
@@ -217,8 +218,8 @@ public class Fixture
 public class Source
 {
   public Position position;
-  public float range = 600.0;
-  public color c = color(random(0, 255), random(0, 255), random(0, 255));
+  public float range;
+  public color c;
   
   public Source(Position p, float rng, color clr)
   {
@@ -234,8 +235,8 @@ public class Source
   
   public Source()
   {
-    this(new Position(), random(100, 600), 
-    color(random(0, 255), random(0, 255), random(0, 255)));
+    this(new Position(), random(100, 600),
+      color(random(0, 255), random(0, 255), random(0, 255)));
   }
   
   public void draw()
@@ -312,7 +313,7 @@ public class RandomSource extends Source
 // another type of source, with better movement
 public class SineSource extends Source
 {
-  public int intervalX, intervalY, intervalZ; // in frames
+  final public int intervalX, intervalY, intervalZ; // in frames
   
   public SineSource()
   {
@@ -347,5 +348,43 @@ public class SineSource extends Source
     final double s = sin(rad);
     final float newValue = (float)(startValue + (s * maxValue/2));
     return newValue;
+  }
+}
+
+
+// a source that pulses the color
+public class PulseSource extends Source
+{
+  
+  final public int interval;
+  final public color startColor;
+  
+  public PulseSource()
+  {
+    super(); 
+    interval = (int)(random(50,500));
+    startColor = c;
+  }
+  
+  public void updateColor()
+  {
+    final int frames = frameCount;
+    
+    final float rem = frames % interval;
+    final float percent = rem/(float)(interval);
+    final float rad = (float)((2.0 * Math.PI) * percent);
+    
+    final double s = abs(sin(rad));
+    /*
+    if (s < 0)
+    {
+      c = color(0,0,0);
+    }
+    */
+    
+    int scaledR = (int)(red(startColor) * s);
+    int scaledG = (int)(green(startColor) * s);
+    int scaledB = (int)(blue(startColor) * s);
+    c = color(scaledR, scaledG, scaledB);
   }
 }
