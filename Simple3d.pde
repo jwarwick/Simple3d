@@ -353,16 +353,16 @@ public class SineSource extends Source
 
 
 // a source that pulses the color
-public class PulseSource extends Source
+public class PulseSource extends SineSource
 {
   
-  final public int interval;
+  final public int pulseInterval;
   final public color startColor;
   
   public PulseSource()
   {
     super(); 
-    interval = (int)(random(50,500));
+    pulseInterval = (int)(random(50,500));
     startColor = c;
   }
   
@@ -370,17 +370,11 @@ public class PulseSource extends Source
   {
     final int frames = frameCount;
     
-    final float rem = frames % interval;
-    final float percent = rem/(float)(interval);
+    final float rem = frames % pulseInterval;
+    final float percent = rem/(float)(pulseInterval);
     final float rad = (float)((2.0 * Math.PI) * percent);
     
     final double s = abs(sin(rad));
-    /*
-    if (s < 0)
-    {
-      c = color(0,0,0);
-    }
-    */
     
     int scaledR = (int)(red(startColor) * s);
     int scaledG = (int)(green(startColor) * s);
