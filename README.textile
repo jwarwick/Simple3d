@@ -7,7 +7,7 @@ There are two concepts:
 * @Sources@ - things that generate color values
 * @Fixtures@ - things that sum color values for display
 
-The basic idea is that each @Fixture@ sums the color inputs from every @Source@. A @Source@ is free to change its location and/or color every frame. Several example @Source@s are provided.
+The basic idea is that each @Fixture@ sums the color inputs from every @Source@. A @Source@ is free to change its location and/or color every frame. Several examples are provided.
 
 This code relies on the "PeasyCam":http://mrfeinberg.com/peasycam/ library.
 
@@ -15,5 +15,5 @@ Several shortcuts are defined:
 
 * @s@ hides @Source@ objects
 * @f@ hides @Fixture@ objects
-* @r@ paints the @Source@s as spheres at with their range as the radius (which obscures all @Fixture@s they interact with)
+* @r@ paints each @Source@ as a sphere with the range as the radius (which obscures any @Fixture@ it interacts with)
 
